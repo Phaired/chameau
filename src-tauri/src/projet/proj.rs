@@ -5,20 +5,32 @@ use rand::Rng;
 /// - `n`: Exposant.
 /// - `m`: Modulo.
 /// Retourne le résultat de (x^n) % m.
+/// Calculates (x^n) % m using fast exponentiation.
+/// - `x`: Base.
+/// - `n`: Exponent.
+/// - `m`: Modulo.
+/// Returns the result of (x^n) % m.
 pub fn fast_expo(x: u64, n: u64, m: u64) -> u64 {
-    let mut result = 1;
-    let mut base = x % m;
+    let mut result: u128 = 1;
+    let mut base: u128 = (x % m) as u128;
     let mut exp = n;
 
     while exp > 0 {
         if exp % 2 == 1 {
-            result = (result * base) % m;
+            result = (result * base) % (m as u128);
+            // Check for potential overflow (optional, since u128 is large enough)
+            if result > u64::MAX as u128 {
+                panic!("Overflow detected in fast_expo");
+            }
         }
-        base = (base * base) % m;
+        base = (base * base) % (m as u128);
         exp /= 2;
     }
-    result
+
+    // Safely cast back to u64, since result % m is guaranteed to be less than m (u64)
+    result as u64
 }
+
 
 /// Vérifie si un nombre `p` est probablement premier en utilisant
 /// un test probabiliste avec les bases 2, 3, 5 et 7.
@@ -60,7 +72,7 @@ pub fn are_relatively_prime(a: u64, b: u64) -> bool {
 
 /// Génère un nombre premier aléatoire compris entre 1 et `n`.
 /// Si aucun nombre premier n'est trouvé après un certain nombre d'essais, retourne `None`.
-fn generate_random_prime(n: u64) -> Option<u64> {
+pub fn generate_random_prime(n: u64) -> Option<u64> {
     if n < 2 {
         return None;
     }
@@ -169,8 +181,8 @@ mod tests {
         }
 
         // Générer un nombre premier dans une plage plus grande
-        if let Some(p) = generate_random_prime(1000) {
-            assert!(p <= 1000);
+        if let Some(p) = generate_random_prime(20000000000) {
+            assert!(p <= 20000000000);
             assert!(is_probably_prime(p));
         } else {
             panic!("Aucun nombre premier trouvé dans la plage spécifiée.");
