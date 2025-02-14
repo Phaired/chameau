@@ -21,13 +21,10 @@ const App = () => {
     const [signError, setSignError] = useState<string | null>(null);
 
     // États pour le décodage et la vérification d'une signature
-    const [verifyMessage, setVerifyMessage] = useState<number>(0);
     const [verifySignature, setVerifySignature] = useState<number>(0);
     const [publicN, setPublicN] = useState<number>(0);
     const [publicE, setPublicE] = useState<number>(0);
     const [decoded, setDecoded] = useState<number | null>(null);
-    const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
-    const [verifyError, setVerifyError] = useState<string | null>(null);
 
     // Commande : Générer un grand nombre premier
     const handleGenerateBigPrime = async () => {
@@ -88,23 +85,6 @@ const App = () => {
         }
     };
 
-    // Commande : Vérifier une signature avec la clé publique (n, e)
-    const handleVerifySignature = async () => {
-        try {
-            const result: boolean = await invoke("verify_signature_command", {
-                message: verifyMessage,
-                signature: verifySignature,
-                publicN,
-                publicE,
-            });
-            setVerifyResult(result);
-            setVerifyError(null);
-        } catch (error) {
-            console.error("Failed to verify signature:", error);
-            setVerifyResult(null);
-            setVerifyError("Failed to verify signature.");
-        }
-    };
 
     return (
         <div className="App" style={{ padding: "2rem" }}>
@@ -171,11 +151,6 @@ const App = () => {
                     <input
                         type="number"
                         placeholder="Message"
-                        onChange={(e) => setVerifyMessage(Number(e.target.value))}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Signature"
                         onChange={(e) => setVerifySignature(Number(e.target.value))}
                     />
                     <input
@@ -194,18 +169,6 @@ const App = () => {
                         Decode Message
                     </Button>
                     {decoded !== null && <p>Decoded Message: {decoded}</p>}
-                </div>
-                <div style={{ marginTop: "1rem" }}>
-                    <Button variant="outline" onClick={handleVerifySignature}>
-                        Verify Signature
-                    </Button>
-                    {verifyResult !== null && (
-                        <p>
-                            Verification result:{" "}
-                            {verifyResult ? "Valid Signature" : "Invalid Signature"}
-                        </p>
-                    )}
-                    {verifyError && <p className="text-red-500">{verifyError}</p>}
                 </div>
             </section>
         </div>

@@ -80,7 +80,7 @@ pub fn mod_inverse(e: u64, phi: u64) -> Option<u64> {
 }
 
 /// Génère une paire de clés RSA.
-/// La procédure est la suivante :
+/// La procédure est la suivante:
 /// 1. Génération aléatoire de deux nombres premiers distincts `p` et `q`
 ///    (dans la plage [2, max]).
 /// 2. Calcul de n = p * q et de φ(n) = (p - 1)*(q - 1)
@@ -99,7 +99,7 @@ pub fn generate_rsa_keys(max: u64) -> Option<((u64, u64), (u64, u64))> {
     let n = p.checked_mul(q)?;
     let phi = (p - 1).checked_mul(q - 1)?;
 
-    // Choix de e : on tente d'utiliser la valeur classique 65537 si possible.
+    // Choix de e: on tente d'utiliser la valeur classique 65537 si possible.
     let e = if phi > 65537 && are_relatively_prime(65537, phi) {
         65537
     } else {
@@ -123,12 +123,6 @@ pub fn sign_message(message: u64, private_key: (u64, u64)) -> u64 {
     fast_expo(message, d, n)
 }
 
-/// Vérifie la signature d'un message `M` à l'aide de la clé publique (n, e).
-/// La vérification consiste à calculer S^e mod n et vérifier que le résultat vaut M.
-pub fn verify_signature(message: u64, signature: u64, public_key: (u64, u64)) -> bool {
-    let (n, e) = public_key;
-    fast_expo(signature, e, n) == message % n
-}
 
 #[cfg(test)]
 mod tests {
@@ -218,19 +212,5 @@ mod tests {
         assert_eq!(mod_inverse(7, 40), Some(23));
         // Exemple : pour e = 3 et φ = 10, 3*7 = 21 ≡ 1 mod 10.
         assert_eq!(mod_inverse(3, 10), Some(7));
-    }
-
-    #[test]
-    fn test_rsa_sign_verify() {
-        // Génération de clés RSA avec des nombres premiers relativement petits (max = 100)
-        if let Some((public_key, private_key)) = generate_rsa_keys(100) {
-            let message = 42;
-            let signature = sign_message(message, private_key);
-            assert!(verify_signature(message, signature, public_key));
-            // Vérification négative : modifier le message doit rendre la vérification fausse.
-            assert!(!verify_signature(message + 1, signature, public_key));
-        } else {
-            panic!("Échec de la génération des clés RSA");
-        }
     }
 }

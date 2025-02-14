@@ -3,7 +3,7 @@
 pub mod projet; // Déclare le module 'projet'
 
 use crate::projet::proj::{
-    generate_random_prime, generate_rsa_keys, sign_message, verify_signature, fast_expo,
+    generate_random_prime, generate_rsa_keys, sign_message, fast_expo,
 };
 use tauri::command;
 
@@ -22,10 +22,7 @@ fn sign_message_command(message: u64, private_n: u64, private_d: u64) -> u64 {
     sign_message(message, (private_n, private_d))
 }
 
-#[tauri::command]
-fn verify_signature_command(message: u64, signature: u64, public_n: u64, public_e: u64) -> bool {
-    verify_signature(message, signature, (public_n, public_e))
-}
+
 
 /// Commande pour décoder le message signé.
 /// Ici, on calcule \( S^e \mod n \) pour récupérer M (si la signature est correcte).
@@ -41,7 +38,6 @@ pub fn run() {
             generate_big_prime,
             generate_rsa_keys_command,
             sign_message_command,
-            verify_signature_command,
             decode_message_command  // Utilisation du nouveau nom de commande
         ])
         .plugin(tauri_plugin_opener::init())
