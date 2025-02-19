@@ -128,22 +128,23 @@ pub fn sign_message(message: u64, private_key: (u64, u64)) -> u64 {
 mod tests {
     use super::*;
 
+    // Test de l'exponentiation rapide.
     #[test]
     fn test_fast_expo() {
-        // 2^3 % 5 = 8 % 5 = 3
+        // Cas simple : 2^3 % 5 = 8 % 5 = 3.
         assert_eq!(fast_expo(2, 3, 5), 3);
-        // Tout nombre à l'exposant 0 vaut 1
+        // Tout nombre élevé à la puissance 0 doit donner 1.
         assert_eq!(fast_expo(10, 0, 7), 1);
-        // Test modulo 1
+        // Test avec modulo égal à 1, le résultat doit toujours être 0.
         assert_eq!(fast_expo(10, 5, 1), 0);
-        // Comparaison avec une méthode brute pour de grands nombres
+        // Comparaison avec une méthode brute pour des valeurs importantes.
         assert_eq!(
             fast_expo(123456789, 12345, 1000000007),
             fast_expo_brute(123456789, 12345, 1000000007)
         );
     }
 
-    // Méthode brute pour vérifier fast_expo
+    // Méthode brute pour vérifier l'exactitude de fast_expo.
     fn fast_expo_brute(x: u64, n: u64, m: u64) -> u64 {
         let mut result = 1;
         for _ in 0..n {
@@ -152,65 +153,130 @@ mod tests {
         result
     }
 
+    // Test de la fonction de primalité probabiliste.
     #[test]
     fn test_is_probably_prime() {
         let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 997, 1009, 104729];
+        // Pour chaque nombre premier attendu, la fonction doit retourner true.
         for &p in &primes {
             assert!(is_probably_prime(p), "{} devrait être premier", p);
         }
         let non_primes = [0, 1, 4, 6, 8, 9, 10, 12, 14, 15, 16, 1000, 1001, 104728];
+        // Pour chaque nombre non premier, la fonction doit retourner false.
         for &np in &non_primes {
             assert!(!is_probably_prime(np), "{} ne devrait pas être premier", np);
         }
     }
 
+    // Test de l'algorithme de calcul du PGCD (plus grand commun diviseur).
     #[test]
     fn test_pgcd() {
+        // PGCD de 54 et 24 doit être 6.
         assert_eq!(pgcd(54, 24), 6);
+        // PGCD de 48 et 18 doit être 6.
         assert_eq!(pgcd(48, 18), 6);
+        // 101 et 10 sont premiers entre eux, donc PGCD = 1.
         assert_eq!(pgcd(101, 10), 1);
+        // Cas avec un des paramètres à zéro.
         assert_eq!(pgcd(0, 5), 5);
         assert_eq!(pgcd(5, 0), 5);
+        // Cas particulier où les deux nombres sont zéro.
         assert_eq!(pgcd(0, 0), 0);
+        // PGCD de deux mêmes nombres.
         assert_eq!(pgcd(7, 7), 7);
         assert_eq!(pgcd(100, 100), 100);
     }
 
+    // Test pour vérifier si deux nombres sont relativement premiers.
     #[test]
     fn test_are_relatively_prime() {
+        // Ces paires doivent être relativement premières.
         assert!(are_relatively_prime(14, 15));
         assert!(are_relatively_prime(17, 31));
         assert!(are_relatively_prime(1, 100));
         assert!(are_relatively_prime(13, 27));
+        // Ces paires ne le sont pas.
         assert!(!are_relatively_prime(14, 21));
         assert!(!are_relatively_prime(100, 10));
         assert!(!are_relatively_prime(12, 18));
+        // Cas avec zéro.
         assert!(!are_relatively_prime(0, 5));
         assert!(!are_relatively_prime(0, 0));
     }
 
+    // Test de la génération aléatoire d'un nombre premier dans un intervalle donné.
     #[test]
     fn test_generate_random_prime() {
+        // Test avec une borne faible.
         if let Some(p) = generate_random_prime(30) {
             assert!(p <= 30);
             assert!(is_probably_prime(p));
         } else {
-            panic!("Aucun nombre premier trouvé dans la plage spécifiée.");
+            panic!("Aucun nombre premier trouvé dans la plage spécifiée (max = 30).");
         }
+        // Test avec une borne plus élevée.
         if let Some(p) = generate_random_prime(20000000000) {
             assert!(p <= 20000000000);
             assert!(is_probably_prime(p));
         } else {
-            panic!("Aucun nombre premier trouvé dans la plage spécifiée.");
+            panic!("Aucun nombre premier trouvé dans la plage spécifiée (max = 20000000000).");
         }
+        // Aucun nombre premier ne peut être généré pour n < 2.
         assert_eq!(generate_random_prime(1), None);
     }
 
+    // Test de la fonction de calcul de l'inverse modulaire.
     #[test]
     fn test_mod_inverse() {
-        // Exemple : pour e = 7 et φ = 40, on attend d = 23 car 7*23 = 161 ≡ 1 mod 40.
+        // Exemple : pour e = 7 et φ = 40, d doit être 23 car 7 * 23 = 161 ≡ 1 mod 40.
         assert_eq!(mod_inverse(7, 40), Some(23));
-        // Exemple : pour e = 3 et φ = 10, 3*7 = 21 ≡ 1 mod 10.
+        // Exemple : pour e = 3 et φ = 10, d doit être 7 car 3 * 7 = 21 ≡ 1 mod 10.
         assert_eq!(mod_inverse(3, 10), Some(7));
+    }
+
+    // Test pour vérifier qu'aucun inverse n'existe dans certains cas.
+    #[test]
+    fn test_mod_inverse_failure() {
+        // Pour e = 2 et φ = 4, aucun inverse modulaire n'existe car 2 et 4 ne sont pas inversibles.
+        assert_eq!(mod_inverse(2, 4), None);
+    }
+
+    // Test complet du processus RSA : génération de clés, signature et vérification.
+    #[test]
+    fn test_rsa_signature() {
+        // Génération des clés RSA avec une borne raisonnable pour garantir que le message soit inférieur à n.
+        let keys = generate_rsa_keys(1000).expect("Échec de la génération des clés RSA");
+        let ((n, e), (_, d)) = keys;
+
+        // Choix d'un message à signer (doit être inférieur à n).
+        let message: u64 = 42;
+        assert!(message < n, "Le message doit être inférieur à n pour RSA");
+
+        // Signature du message avec la clé privée (n, d).
+        let signature = sign_message(message, (n, d));
+
+        // Vérification de la signature via l'opération S^e mod n.
+        let decoded_message = fast_expo(signature, e, n);
+
+        // La signature est valide si le message décodé correspond au message original modulo n.
+        assert_eq!(decoded_message, message % n, "La vérification de la signature a échoué");
+    }
+
+    // Test supplémentaire pour vérifier la signature lorsque le message est 0.
+    #[test]
+    fn test_sign_message_zero() {
+        // Génération des clés RSA.
+        let keys = generate_rsa_keys(1000).expect("Échec de la génération des clés RSA");
+        let ((n, e), (_, d)) = keys;
+
+        // Cas particulier : le message 0 doit rester 0 après signature.
+        let message: u64 = 0;
+        assert!(message < n, "Le message doit être inférieur à n pour RSA");
+
+        let signature = sign_message(message, (n, d));
+        let decoded_message = fast_expo(signature, e, n);
+
+        // Vérification : 0 signé doit redonner 0.
+        assert_eq!(decoded_message, 0, "La signature du message 0 a échoué");
     }
 }

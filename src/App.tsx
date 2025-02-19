@@ -1,174 +1,110 @@
-// src/App.tsx
+// App.tsx (extrait)
 import './App.css';
 import { Button } from "@/components/ui/button.tsx";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Input } from "@/components/ui/input.tsx";
 
 const App = () => {
-    // État pour la génération d'un grand nombre premier
     const [bigPrime, setBigPrime] = useState<number | null>(null);
     const [primeError, setPrimeError] = useState<string | null>(null);
-
-    // État pour la génération des clés RSA
     const [rsaKeys, setRSAKeys] = useState<[[number, number], [number, number]] | null>(null);
     const [rsaError, setRSAError] = useState<string | null>(null);
-
-    // États pour la signature d'un message
     const [message, setMessage] = useState<number>(0);
     const [privateN, setPrivateN] = useState<number>(0);
     const [privateD, setPrivateD] = useState<number>(0);
     const [signature, setSignature] = useState<number | null>(null);
     const [signError, setSignError] = useState<string | null>(null);
-
-    // États pour le décodage et la vérification d'une signature
     const [verifySignature, setVerifySignature] = useState<number>(0);
     const [publicN, setPublicN] = useState<number>(0);
     const [publicE, setPublicE] = useState<number>(0);
     const [decoded, setDecoded] = useState<number | null>(null);
 
-    // Commande : Générer un grand nombre premier
     const handleGenerateBigPrime = async () => {
         try {
             const prime: number = await invoke("generate_big_prime", { max: 1844674407370955 });
             setBigPrime(prime);
             setPrimeError(null);
         } catch (error) {
-            console.error("Failed to generate big prime:", error);
             setBigPrime(null);
-            setPrimeError("Failed to generate a big prime number.");
+            setPrimeError("Échec lors de la génération du grand nombre premier.");
         }
     };
 
-    // Commande : Générer les clés RSA
     const handleGenerateRSAKeys = async () => {
         try {
-            // Ici, nous utilisons 1000 comme borne max pour la génération des nombres premiers.
             const keys: [[number, number], [number, number]] = await invoke("generate_rsa_keys_command", { max: 10000 });
             setRSAKeys(keys);
             setRSAError(null);
         } catch (error) {
-            console.error("Failed to generate RSA keys:", error);
             setRSAKeys(null);
-            setRSAError("Failed to generate RSA keys.");
+            setRSAError("Échec lors de la génération des clés RSA.");
         }
     };
 
-    // Commande : Signer un message avec la clé privée (n, d)
     const handleSignMessage = async () => {
         try {
-            const sig: number = await invoke("sign_message_command", {
-                message,
-                privateN, // attention à la casse attendue par Rust
-                privateD
-            });
+            const sig: number = await invoke("sign_message_command", { message, privateN, privateD });
             setSignature(sig);
             setSignError(null);
         } catch (error) {
-            console.error("Failed to sign message:", error);
             setSignature(null);
-            setSignError("Failed to sign message.");
+            setSignError("Échec lors de la signature du message.");
         }
     };
 
-    // Commande : Décoder le message signé à l'aide de la clé publique (n, e)
     const handleDecodeMessage = async () => {
         try {
-            const dec: number = await invoke("decode_message_command", {
-                signature: verifySignature,
-                publicN,
-                publicE,
-            });
+            const dec: number = await invoke("decode_message_command", { signature: verifySignature, publicN, publicE });
             setDecoded(dec);
         } catch (error) {
-            console.error("Failed to decode message:", error);
             setDecoded(null);
         }
     };
 
-
     return (
         <div className="App" style={{ padding: "2rem" }}>
-            {/* Génération d'un grand nombre premier */}
             <section style={{ marginBottom: "2rem" }}>
-                <h2>Generate Big Prime Number</h2>
-                <Button variant="outline" onClick={handleGenerateBigPrime}>
-                    Generate big prime number
-                </Button>
-                {bigPrime !== null && <p>Big prime: {bigPrime}</p>}
+                <h2>Générer un grand nombre premier</h2>
+                <Button variant="outline" onClick={handleGenerateBigPrime}>Générer un grand nombre premier</Button>
+                {bigPrime !== null && <p>Nombre premier : {bigPrime}</p>}
                 {primeError && <p className="text-red-500">{primeError}</p>}
             </section>
 
-            {/* Génération des clés RSA */}
             <section style={{ marginBottom: "2rem" }}>
-                <h2>Generate RSA Keys</h2>
-                <Button variant="outline" onClick={handleGenerateRSAKeys}>
-                    Generate RSA Keys
-                </Button>
+                <h2>Générer des clés RSA</h2>
+                <Button variant="outline" onClick={handleGenerateRSAKeys}>Générer des clés RSA</Button>
                 {rsaKeys && (
                     <div>
-                        <p>
-                            <strong>Public Key (n, e):</strong> {rsaKeys[0][0]}, {rsaKeys[0][1]}
-                        </p>
-                        <p>
-                            <strong>Private Key (n, d):</strong> {rsaKeys[1][0]}, {rsaKeys[1][1]}
-                        </p>
+                        <p><strong>Clé publique (n, e):</strong> {rsaKeys[0][0]}, {rsaKeys[0][1]}</p>
+                        <p><strong>Clé privée (n, d):</strong> {rsaKeys[1][0]}, {rsaKeys[1][1]}</p>
                     </div>
                 )}
                 {rsaError && <p className="text-red-500">{rsaError}</p>}
             </section>
 
-            {/* Signature d'un message */}
             <section style={{ marginBottom: "2rem" }}>
-                <h2>Sign Message</h2>
+                <h2>Signer le message</h2>
                 <div>
-                    <input
-                        type="number"
-                        placeholder="Message"
-                        onChange={(e) => setMessage(Number(e.target.value))}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Private n"
-                        onChange={(e) => setPrivateN(Number(e.target.value))}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Private d"
-                        onChange={(e) => setPrivateD(Number(e.target.value))}
-                    />
+                    <Input type="number" placeholder="Message" onChange={(e) => setMessage(Number(e.target.value))} />
+                    <Input type="number" placeholder="Modulus (n)" onChange={(e) => setPrivateN(Number(e.target.value))} />
+                    <Input type="number" placeholder="Exponent (d)" onChange={(e) => setPrivateD(Number(e.target.value))} />
                 </div>
-                <Button variant="outline" onClick={handleSignMessage}>
-                    Sign Message
-                </Button>
-                {signature !== null && <p>Signature: {signature}</p>}
+                <Button variant="outline" onClick={handleSignMessage}>Signer le message</Button>
+                {signature !== null && <p>Signature : {signature}</p>}
                 {signError && <p className="text-red-500">{signError}</p>}
             </section>
 
-            {/* Décodage et vérification d'une signature */}
             <section style={{ marginBottom: "2rem" }}>
-                <h2>Decode Message and Verify Signature</h2>
+                <h2>Décoder et vérifier la signature</h2>
                 <div>
-                    <input
-                        type="number"
-                        placeholder="Message"
-                        onChange={(e) => setVerifySignature(Number(e.target.value))}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Public n"
-                        onChange={(e) => setPublicN(Number(e.target.value))}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Public e"
-                        onChange={(e) => setPublicE(Number(e.target.value))}
-                    />
+                    <Input type="number" placeholder="Signature" onChange={(e) => setVerifySignature(Number(e.target.value))} />
+                    <Input type="number" placeholder="Modulus (n)" onChange={(e) => setPublicN(Number(e.target.value))} />
+                    <Input type="number" placeholder="Exponent (e)" onChange={(e) => setPublicE(Number(e.target.value))} />
                 </div>
                 <div style={{ marginTop: "1rem" }}>
-                    <Button variant="outline" onClick={handleDecodeMessage}>
-                        Decode Message
-                    </Button>
-                    {decoded !== null && <p>Decoded Message: {decoded}</p>}
+                    <Button variant="outline" onClick={handleDecodeMessage}>Décoder le message</Button>
+                    {decoded !== null && <p>Message décodé : {decoded}</p>}
                 </div>
             </section>
         </div>
